@@ -1,0 +1,769 @@
+/* ------------------------------------------------------------
+   WedConnect intro — scroll-driven. JS writes 0→1 values
+   (--door, --zoom, --venue, --rings, …) onto .intro-stage and
+   everything below is derived from them.
+------------------------------------------------------------ */
+
+.intro {
+  --wall: #efe2d0;
+  --wall-dark: #d9c6ad;
+  --gold-1: #f3d28a;
+  --gold-2: #c99a45;
+  --wood-1: #4a2040;
+  --wood-2: #2f1229;
+
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  background: #1c0f1a;
+  outline: none;
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+.intro::-webkit-scrollbar {
+  display: none;
+}
+.intro-leaving {
+  opacity: 0;
+  transform: scale(1.04);
+  pointer-events: none;
+}
+
+.intro-track {
+  height: 900vh;
+}
+
+.intro-stage {
+  --progress: 0;
+  --hint: 1;
+  --door: 0;
+  --birds: 0;
+  --zoom: 0;
+  --flash: 0;
+  --venue: 0;
+  --caption: 0;
+  --petals: 0;
+  --veil: 0;
+  --rings: 0;
+  --heart: 0;
+  --w1: 0;
+  --w2: 0;
+  --brand: 0;
+  --cta: 0;
+
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.intro-stage > * {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------------- venue ---------------- */
+
+.venue .layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+.layer-backdrop {
+  transform-origin: 50% 52%;
+  transform: scale(calc(1.18 - var(--zoom) * 0.18 + var(--venue) * 0.1));
+}
+.layer-terrace {
+  transform-origin: 50% 72%;
+  transform: translateY(calc(var(--venue) * -2%)) scale(calc(1.25 - var(--zoom) * 0.25 + var(--venue) * 0.22));
+}
+.layer-foreground {
+  transform-origin: 50% 100%;
+  transform: scale(calc(1.5 - var(--zoom) * 0.4 + var(--venue) * 0.45));
+}
+
+.sun {
+  transform: translateY(calc(var(--venue) * 22px));
+}
+.shimmer {
+  animation: shimmer 2.4s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+.sailboat {
+  animation: sail 26s ease-in-out infinite alternate;
+}
+@keyframes sail {
+  to {
+    transform: translateX(-140px);
+  }
+}
+.bulb {
+  animation: twinkle 1.8s ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.doves {
+  pointer-events: none;
+}
+.dove {
+  position: absolute;
+  top: var(--y);
+  left: -8%;
+  width: 34px;
+  fill: #fff8ef;
+  opacity: 0.9;
+  animation: dove-across 18s linear infinite;
+  animation-delay: var(--t);
+}
+@keyframes dove-across {
+  from {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(60vw, -4vh);
+  }
+  to {
+    transform: translate(120vw, 2vh);
+  }
+}
+
+/* ---------------- birds (shared) ---------------- */
+
+.bird .wing {
+  transform-box: fill-box;
+  animation: flap var(--flap, 0.5s) ease-in-out infinite alternate;
+}
+.bird .wing-l {
+  transform-origin: 100% 90%;
+}
+.bird .wing-r {
+  transform-origin: 0% 90%;
+  animation-name: flap-r;
+}
+@keyframes flap {
+  from {
+    transform: rotate(22deg) scaleY(1.05);
+  }
+  to {
+    transform: rotate(-28deg) scaleY(0.55);
+  }
+}
+@keyframes flap-r {
+  from {
+    transform: rotate(-22deg) scaleY(1.05);
+  }
+  to {
+    transform: rotate(28deg) scaleY(0.55);
+  }
+}
+
+/* ---------------- wall & doors ---------------- */
+
+.wall-layer {
+  transform-origin: 50% 54%;
+  transform: scale(calc(1 + var(--zoom) * var(--zoom) * 10));
+  opacity: calc(1 - clamp(0, (var(--zoom) - 0.72) * 4, 1));
+  will-change: transform, opacity;
+}
+
+.doorway {
+  --dw: min(40vh, 64vw);
+  --dh: min(64vh, 102vw);
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: var(--dw);
+  height: var(--dh);
+  transform: translate(-50%, -50%);
+  border-radius: 999px 999px 0 0;
+  /* the wall itself: a huge shadow around the arched opening */
+  box-shadow: 0 0 0 200vmax var(--wall);
+  perspective: 1600px;
+  perspective-origin: 50% 60%;
+}
+.doorway::before {
+  /* gilded arch moulding */
+  content: '';
+  position: absolute;
+  inset: -20px -20px 0;
+  border: 9px solid var(--gold-2);
+  border-bottom: 0;
+  border-radius: 999px 999px 0 0;
+  box-shadow:
+    inset 0 0 0 3px var(--gold-1),
+    0 0 0 3px var(--gold-1),
+    0 18px 40px rgba(60, 30, 20, 0.25);
+  pointer-events: none;
+}
+
+.door-light {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  opacity: calc(var(--door) * (1 - var(--zoom)));
+  background: radial-gradient(ellipse at 50% 70%, rgba(255, 236, 200, 0.85), transparent 65%);
+  mix-blend-mode: screen;
+}
+
+.door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, var(--wood-1), var(--wood-2));
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.45);
+  will-change: transform;
+}
+.door-l {
+  left: 0;
+  border-top-left-radius: 999px;
+  transform-origin: 0 50%;
+  transform: rotateY(calc(var(--door) * 104deg));
+  border-right: 1px solid rgba(0, 0, 0, 0.5);
+}
+.door-r {
+  right: 0;
+  border-top-right-radius: 999px;
+  transform-origin: 100% 50%;
+  transform: rotateY(calc(var(--door) * -104deg));
+}
+
+.door-panel {
+  position: absolute;
+  left: 16%;
+  right: 16%;
+  border: 2px solid var(--gold-2);
+  box-shadow: inset 0 0 0 5px rgba(0, 0, 0, 0.15), inset 0 0 0 6px rgba(243, 210, 138, 0.35);
+}
+.door-panel.top {
+  top: 26%;
+  height: 32%;
+}
+.door-l .door-panel.top {
+  border-top-left-radius: 999px 60%;
+}
+.door-r .door-panel.top {
+  border-top-right-radius: 999px 60%;
+}
+.door-panel.bottom {
+  top: 64%;
+  height: 28%;
+}
+.door-handle {
+  position: absolute;
+  top: 56%;
+  width: 7px;
+  height: 46px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #a8762a, var(--gold-1), #a8762a);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.door-l .door-handle {
+  right: 9%;
+}
+.door-r .door-handle {
+  left: 9%;
+}
+.door-seal {
+  position: absolute;
+  top: 14%;
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  text-align: center;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  color: #3a1830;
+  background: radial-gradient(circle at 35% 30%, #fff1c1, var(--gold-2));
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+.door-l .door-seal {
+  right: -17px;
+  clip-path: inset(0 50% 0 0);
+  text-indent: -12px;
+}
+.door-r .door-seal {
+  left: -17px;
+  clip-path: inset(0 0 0 50%);
+  text-indent: 12px;
+}
+
+.pilaster {
+  position: absolute;
+  top: calc(54% - min(32vh, 51vw) - 40px);
+  bottom: 0;
+  width: min(7vh, 9vw);
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.06) 0 3px, transparent 3px 11px),
+    linear-gradient(90deg, var(--wall-dark), #f7ecdd 45%, var(--wall-dark));
+  box-shadow: 0 0 30px rgba(80, 50, 30, 0.15);
+}
+.pilaster-l {
+  right: calc(50% + min(20vh, 32vw) + 50px);
+}
+.pilaster-r {
+  left: calc(50% + min(20vh, 32vw) + 50px);
+}
+
+.sconce {
+  position: absolute;
+  top: calc(54% - 8vh);
+  width: 14px;
+  height: 30px;
+  border-radius: 7px 7px 3px 3px;
+  background: linear-gradient(var(--gold-1), var(--gold-2));
+}
+.sconce::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -14px;
+  width: 90px;
+  height: 90px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 214, 140, 0.8), rgba(255, 214, 140, 0) 65%);
+  animation: flicker 3s ease-in-out infinite;
+}
+.sconce-l {
+  right: calc(50% + min(20vh, 32vw) + 50px + min(7vh, 9vw) + 30px);
+}
+.sconce-r {
+  left: calc(50% + min(20vh, 32vw) + 50px + min(7vh, 9vw) + 30px);
+}
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  40% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.7;
+  }
+}
+
+.wall-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(54% + min(32vh, 51vw));
+  bottom: 0;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 30%),
+    repeating-linear-gradient(90deg, #e9dccb 0 12vw, #f6eee2 12vw 24vw);
+}
+
+.dust {
+  pointer-events: none;
+  opacity: calc(1 - var(--door));
+}
+.dust span {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--gold-1);
+  box-shadow: 0 0 6px var(--gold-1);
+  animation: dust 8s ease-in-out infinite;
+}
+@keyframes dust {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(12px, -30px);
+    opacity: 0.8;
+  }
+}
+
+.flash {
+  pointer-events: none;
+  opacity: var(--flash);
+  background: radial-gradient(circle at 50% 54%, rgba(255, 244, 220, 0.95), rgba(255, 230, 190, 0.2) 55%, transparent 80%);
+}
+
+/* ---------------- flock ---------------- */
+
+.flock {
+  pointer-events: none;
+}
+.flock-bird {
+  --b: clamp(0, calc((var(--birds) - var(--lag)) / (1 - var(--lag))), 1);
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  width: 46px;
+  margin: -15px 0 0 -23px;
+  fill: var(--gold-2);
+  filter: drop-shadow(0 4px 6px rgba(80, 40, 10, 0.35));
+  opacity: min(clamp(0, calc(var(--b) * 10), 1), clamp(0, calc((1 - var(--b)) * 6), 1));
+  transform: translate(calc(var(--b) * var(--dx)), calc(var(--b) * var(--dy))) scale(calc(0.25 + var(--b) * var(--s)));
+}
+.flock-bird .wing-l,
+.flock-bird .wing-r {
+  fill: var(--gold-1);
+}
+
+/* ---------------- petals ---------------- */
+
+.petals {
+  pointer-events: none;
+  opacity: var(--petals);
+}
+.petals span {
+  position: absolute;
+  top: -5%;
+  border-radius: 80% 0 80% 0;
+  opacity: 0.9;
+  animation: petal-fall linear infinite;
+}
+@keyframes petal-fall {
+  from {
+    transform: translate(0, -5vh) rotate(0deg);
+  }
+  50% {
+    transform: translate(var(--sway), 55vh) rotate(200deg);
+  }
+  to {
+    transform: translate(0, 112vh) rotate(420deg);
+  }
+}
+
+/* ---------------- caption ---------------- */
+
+.caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 11vh 16px 0;
+  text-align: center;
+  pointer-events: none;
+  opacity: var(--caption);
+  transform: translateY(calc((1 - var(--caption)) * 24px));
+}
+.caption .eyebrow {
+  font: 600 0.75rem/1 var(--sans);
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #ffe6c2;
+  margin-bottom: 14px;
+}
+.caption p {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.6rem, 4.2vw, 3.2rem);
+  line-height: 1.15;
+  color: #fff;
+  text-shadow: 0 4px 30px rgba(60, 20, 50, 0.6);
+  max-width: 16ch;
+}
+
+/* ---------------- veil + promise ---------------- */
+
+.veil {
+  pointer-events: none;
+  opacity: calc(var(--veil) * 0.92);
+  background: radial-gradient(ellipse at 50% 45%, rgba(74, 32, 64, 0.82), rgba(28, 12, 26, 0.97) 75%);
+}
+
+.promise {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 16px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.rings-wrap {
+  position: relative;
+  width: min(44vh, 78vw);
+  aspect-ratio: 400 / 360;
+  margin-bottom: 1vh;
+  opacity: clamp(0, calc(var(--rings) * 3), 1);
+}
+.rings-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.intro-stage[data-beat='on'] .rings-svg {
+  animation: heartbeat 1.6s ease-in-out infinite;
+}
+@keyframes heartbeat {
+  0%,
+  40%,
+  100% {
+    transform: scale(1);
+  }
+  15% {
+    transform: scale(1.05);
+  }
+  28% {
+    transform: scale(1.02);
+  }
+}
+
+.ring {
+  transform-box: view-box;
+  transform-origin: 50% 47%;
+}
+.ring-l {
+  transform: translateX(calc((1 - var(--rings)) * -520px)) rotate(calc((1 - var(--rings)) * -240deg))
+    scale(calc(1 - var(--heart) * 0.12));
+}
+.ring-r {
+  transform: translateX(calc((1 - var(--rings)) * 520px)) rotate(calc((1 - var(--rings)) * 240deg))
+    scale(calc(1 - var(--heart) * 0.12));
+}
+.glint {
+  animation: glint 2.2s ease-in-out infinite;
+}
+@keyframes glint {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.heart-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--heart));
+  opacity: clamp(0, calc(var(--heart) * 8), 1);
+}
+.heart-glow {
+  opacity: calc(var(--heart) * 0.45);
+}
+
+.sparks {
+  position: absolute;
+  inset: 0;
+}
+.sparks span {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  width: 6px;
+  height: 6px;
+  margin: -3px;
+  border-radius: 50%;
+  background: #fff4cf;
+  box-shadow: 0 0 10px 2px rgba(243, 210, 138, 0.9);
+  opacity: 0;
+}
+.intro-stage[data-beat='on'] .sparks span {
+  animation: spark 1.6s ease-out infinite;
+}
+@keyframes spark {
+  from {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(var(--x), var(--y)) scale(0.2);
+    opacity: 0;
+  }
+}
+
+.promise-line {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(2.2rem, 7vw, 5.6rem);
+  line-height: 1.02;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+.promise-line.gold {
+  font-style: italic;
+  padding-bottom: 0.08em;
+}
+/* gradient goes on each word: the per-word transform/filter breaks clipping on the parent */
+.promise-line.gold .word {
+  background: linear-gradient(100deg, #fff1c1, #e6bf6a 40%, #f7dca0 60%, #c99a45);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.word {
+  --o: clamp(0, calc(var(--w) * var(--n) - var(--i)), 1);
+  display: inline-block;
+  white-space: pre;
+  opacity: var(--o);
+  transform: translateY(calc((1 - var(--o)) * 0.5em)) scale(calc(0.8 + var(--o) * 0.2));
+  filter: blur(calc((1 - var(--o)) * 10px));
+}
+
+.promise-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 2.2vh 0 0;
+  font-family: var(--serif);
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  letter-spacing: 0.12em;
+  color: #fff;
+  opacity: var(--brand);
+  transform: translateY(calc((1 - var(--brand)) * 16px));
+}
+.promise-brand .accent {
+  color: var(--gold-1);
+}
+.promise-brand .rule {
+  display: inline-block;
+  width: calc(var(--brand) * 48px);
+  height: 1px;
+  background: var(--gold-1);
+}
+
+.intro-enter {
+  margin-top: 3vh;
+  padding: 14px 30px;
+  border: 1px solid var(--gold-1);
+  border-radius: 999px;
+  background: linear-gradient(100deg, rgba(243, 210, 138, 0.18), rgba(243, 210, 138, 0.05));
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(6px);
+  opacity: var(--cta);
+  transform: translateY(calc((1 - var(--cta)) * 20px));
+  transition: background 0.25s, box-shadow 0.25s;
+}
+.intro-stage[data-cta='on'] .intro-enter {
+  pointer-events: auto;
+}
+.intro-enter:hover {
+  background: var(--gold-2);
+  box-shadow: 0 10px 30px rgba(201, 154, 69, 0.4);
+}
+
+/* ---------------- chrome ---------------- */
+
+.intro-top {
+  bottom: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px clamp(16px, 4vw, 40px);
+  pointer-events: none;
+}
+.intro-logo {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--plum);
+  transition: color 0.4s;
+}
+.intro-logo span {
+  color: var(--rose);
+}
+.intro-stage[data-dark='on'] .intro-logo {
+  color: #fff;
+}
+.intro-skip {
+  pointer-events: auto;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(74, 32, 64, 0.25);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--plum);
+  font-size: 0.85rem;
+  font-weight: 600;
+  backdrop-filter: blur(6px);
+}
+.intro-skip:hover {
+  background: #fff;
+}
+
+.scroll-hint {
+  top: auto;
+  bottom: 4vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  opacity: var(--hint);
+  color: var(--plum);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+.scroll-hint i {
+  width: 1px;
+  height: 42px;
+  background: linear-gradient(var(--plum), transparent);
+  animation: hint 1.6s ease-in-out infinite;
+  transform-origin: top;
+}
+@keyframes hint {
+  0% {
+    transform: scaleY(0);
+  }
+  60% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 0;
+  }
+}
+
+.intro-progress {
+  top: auto;
+  height: 3px;
+  transform-origin: left;
+  transform: scaleX(var(--progress));
+  background: linear-gradient(90deg, var(--rose), var(--gold-1));
+}
+
+@media (max-width: 640px) {
+  .pilaster,
+  .sconce {
+    display: none;
+  }
+  .flock-bird {
+    width: 34px;
+  }
+}
